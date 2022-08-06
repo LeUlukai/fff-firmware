@@ -1,0 +1,105 @@
+diff --git a/target/linux/ramips/dts/mt7628an_xiaomi_mi-router-4a-100m-intl.dts b/target/linux/ramips/dts/mt7628an_xiaomi_mi-router-4a-100m-intl.dts
+new file mode 100644
+index 000000000000..cdf259c51a61
+--- /dev/null
++++ b/target/linux/ramips/dts/mt7628an_xiaomi_mi-router-4a-100m-intl.dts
+@@ -0,0 +1,56 @@
++// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
++
++#include "mt7628an_xiaomi_mi-router-4.dtsi"
++
++/ {
++	compatible = "xiaomi,mi-router-4a-100m-intl", "mediatek,mt7628an-soc";
++	model = "Xiaomi Mi Router 4A (100M International Edition)";
++};
++
++&partitions {
++	partition@60000 {
++		label = "overlay";
++		reg = <0x60000 0x200000>;
++		read-only;
++	};
++
++	partition@260000 {
++		label = "firmware";
++		reg = <0x260000 0xda0000>;
++		compatible = "denx,uimage";
++	};
++};
++
++&pcie {
++	status = "okay";
++};
++
++&pcie0 {
++	wifi@0,0 {
++		compatible = "mediatek,mt76";
++		reg = <0x0000 0 0 0 0>;
++		mediatek,mtd-eeprom = <&factory 0x8000>;
++		ieee80211-freq-limit = <5000000 6000000>;
++	};
++};
++
++&ethernet {
++	nvmem-cells = <&macaddr_factory_4>;
++	nvmem-cell-names = "mac-address";
++	mac-address-increment = <(-1)>;
++};
++
++&esw {
++	mediatek,portmap = <0x3e>;
++	mediatek,portdisable = <0x2a>;
++};
++
++&factory {
++	compatible = "nvmem-cells";
++	#address-cells = <1>;
++	#size-cells = <1>;
++
++	macaddr_factory_4: macaddr@4 {
++		reg = <0x4 0x6>;
++	};
++};
+diff --git a/target/linux/ramips/image/mt76x8.mk b/target/linux/ramips/image/mt76x8.mk
+index 81b68f635408..210632468472 100644
+--- a/target/linux/ramips/image/mt76x8.mk
++++ b/target/linux/ramips/image/mt76x8.mk
+@@ -902,6 +902,16 @@ define Device/xiaomi_mi-router-4a-100m
+ endef
+ TARGET_DEVICES += xiaomi_mi-router-4a-100m
+ 
++define Device/xiaomi_mi-router-4a-100m-intl
++  IMAGE_SIZE := 14976k
++  DEVICE_VENDOR := Xiaomi
++  DEVICE_MODEL := Mi Router 4A
++  DEVICE_VARIANT := 100M International Edition
++  DEVICE_PACKAGES := kmod-mt76x2
++  SUPPORTED_DEVICES += xiaomi,mir4a-100m-intl
++endef
++TARGET_DEVICES += xiaomi_mi-router-4a-100m-intl
++
+ define Device/xiaomi_mi-router-4c
+   IMAGE_SIZE := 14976k
+   DEVICE_VENDOR := Xiaomi
+diff --git a/target/linux/ramips/mt76x8/base-files/etc/board.d/02_network b/target/linux/ramips/mt76x8/base-files/etc/board.d/02_network
+index 408f5f5e01d8..deb174909aa4 100644
+--- a/target/linux/ramips/mt76x8/base-files/etc/board.d/02_network
++++ b/target/linux/ramips/mt76x8/base-files/etc/board.d/02_network
+@@ -148,7 +148,8 @@ ramips_setup_interfaces()
+ 		ucidef_add_switch "switch0" \
+ 			"0:wan" "3:lan" "4:lan" "6@eth0"
+ 		;;
+-	xiaomi,mi-router-4a-100m)
++	xiaomi,mi-router-4a-100m|\
++	xiaomi,mi-router-4a-100m-intl)
+ 		ucidef_add_switch "switch0" \
+ 			"4:lan:1" "2:lan:2" "0:wan" "6@eth0"
+ 		;;
+@@ -272,6 +273,7 @@ ramips_setup_macs()
+ 		wan_mac=$(mtd_get_mac_binary factory 0x28)
+ 		;;
+ 	xiaomi,mi-router-4a-100m|\
++	xiaomi,mi-router-4a-100m-intl|\
+ 	xiaomi,mi-router-4c)
+ 		wan_mac=$(mtd_get_mac_binary factory 0x4)
+ 		;;
